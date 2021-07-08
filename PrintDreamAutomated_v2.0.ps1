@@ -1,4 +1,4 @@
-#Created by ANTLA and MITHO
+#Created by packet and MTossen
 
 #Sets the TLS settings to allow downloads via HTTP
 #Downloads, installs, and imports neccesary modules
