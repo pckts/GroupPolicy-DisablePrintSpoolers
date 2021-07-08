@@ -1,4 +1,4 @@
-﻿#Created by packet and MTossen
+#Created by packet and MTossen
 
 #Run entire script(as admin), you will make choices during the execution, so don't make partial runs unless you know what you're doing.
 
@@ -7,7 +7,6 @@
 
 #Imports the neccesary modules to access the cmdlets used in the script.
 $ProgressPreference = "SilentlyContinue"
-Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted | out-null
 import-module activedirectory | out-null
 install-module Microsoft.powershell.archive | out-null
 import-module Microsoft.powershell.archive | out-null
@@ -62,7 +61,7 @@ cls
 write-host "(Alternative: Any other input to just get a list of servers)"
 write-host ""
 write-host "Solution 1: Disable for all servers and clients"
-write-host "Solution 2: Disable for some  servers and clients"
+write-host "Solution 2: Disable for some servers and clients"
 $FixMethod = read-host "Solution 1 or 2? (1/2)"
 if ($FixMethod -eq 1)
 {
