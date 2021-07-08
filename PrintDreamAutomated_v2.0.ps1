@@ -1,4 +1,14 @@
-#Created by packet and MTossen
+#Created by packet
+
+#Checks if run as admin
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) -eq $false)
+{
+    cls
+    write-host "Please run as admin..."
+    sleep 1
+    break
+}
 
 #Sets the TLS settings to allow downloads via HTTP
 #Downloads, installs, and imports neccesary modules
@@ -12,9 +22,10 @@ cls
 #Shows the startup banner main menu.
 $banner = 
 {
+    sleep 1
     cls
     write-host "";
-    write-host "                                " -BackGroundColor Black -NoNewLine; write-host "By packet and MTossen" -ForeGroundColor Red -BackGroundColor Black -NoNewLine; write-host "                                " -BackGroundColor Black
+    write-host "                                      " -BackGroundColor Black -NoNewLine; write-host "By packet" -ForeGroundColor Red -BackGroundColor Black -NoNewLine; write-host "                                      " -BackGroundColor Black
     write-host "  " -BackGroundColor Black -NoNewLine; write-host "██████╗ ██████╗ ██╗███╗   ██╗████████╗██████╗ ██████╗ ███████╗ █████╗ ███╗   ███╗" -ForeGroundColor Darkyellow -BackGroundColor Black -NoNewLine; write-host "  " -BackGroundColor Black
     write-host "  " -BackGroundColor Black -NoNewLine; write-host "██╔══██╗██╔══██╗██║████╗  ██║╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██╔══██╗████╗ ████║" -ForeGroundColor Darkyellow -BackGroundColor Black -NoNewLine; write-host "  " -BackGroundColor Black
     write-host "  " -BackGroundColor Black -NoNewLine; write-host "██████╔╝██████╔╝██║██╔██╗ ██║   ██║   ██║  ██║██████╔╝█████╗  ███████║██╔████╔██║" -ForeGroundColor Darkyellow -BackGroundColor Black -NoNewLine; write-host "  " -BackGroundColor Black
@@ -27,7 +38,7 @@ $banner =
     write-host "|and deploys chosen remediation GPO  |" -BackGroundColor Black -NoNewLine; write-host " deployed with PrintNightmareAutomated or     |" -ForeGroundColor DarkGray -BackGroundColor Black
     write-host "|------------------------------------|" -BackGroundColor Black -NoNewLine; write-host " deployments that otherwise follow the same   |" -ForeGroundColor DarkGray -BackGroundColor Black
     write-host "|2. (cleanup) Deletes previously     |" -BackGroundColor Black -NoNewLine; write-host " naming conventions.                          |" -ForeGroundColor DarkGray -BackGroundColor Black
-    write-host "|delpoyed remediation GPOs           |" -BackGroundColor Black -NoNewLine; write-host "                        For INTERNAL use only |" -ForeGroundColor DarkGray -BackGroundColor Black
+    write-host "|delpoyed remediation GPOs           |" -BackGroundColor Black -NoNewLine; write-host " (CTRL+C to exit)       For INTERNAL use only |" -ForeGroundColor DarkGray -BackGroundColor Black
     write-host "+------------------------------------+" -BackGroundColor Black -NoNewLine; write-host "----------------------------------------------+" -ForeGroundColor DarkGray -BackGroundColor Black
     write-host ""
     $WantedFunction = read-host "Select function (1/2)"
@@ -35,12 +46,7 @@ $banner =
     #If neither 1 or 2 is selected, user is forced to stay on main menu
     if ($WantedFunction -ne "1" -and $WantedFunction -ne "2")
     {
-        &@$banner
-    }
-    #If function 1 is selected, user is ejected from main menu into start of core script
-    if ($WantedFunction -eq "1")
-    {
-        &@$bannerexit
+        &@banner
     }
     #If function 2 is selected, GPO from previous deployment(s) are detected and deleted, user is then returned to main menu.
     if ($WantedFunction -eq "2")
@@ -51,18 +57,21 @@ $banner =
             $PGPO = $PreviousGPO.Displayname
             Remove-GPO -Name $PGPO
         }
-        &@$banner
+        cls
+        write-host "CLEANUP COMPLETE" -ForegroundColor Green
+        sleep 1
+        &@banner
     }
 }
-&@$banner
+&@banner
 $bannerexit
-{}
 
 #Detects if GPO(s) stemming from a previous run of this script exists. If it does, it will warn the user and refuse to continue.
 #It will display a warning message and then after acknowledgement from the user, return them to the main menu.
 $HasRunBefore = Get-GPO -All | Where-Object {$_.displayname -like "PRTNMITR_*"}
 if ($HasRunBefore -ne $null)
 {
+    sleep 1
     cls
     write-host ""
     write-host "===" -ForegroundColor DarkGray -NoNewLine; write-host "ERROR" -ForegroundColor Red -NoNewLine; write-host "===" -ForegroundColor DarkGray -NoNewLine; write-host "ERROR" -ForegroundColor Red -NoNewLine; write-host "===" -ForegroundColor DarkGray -NoNewLine; write-host "ERROR" -ForegroundColor Red -NoNewLine; write-host "===" -ForegroundColor DarkGray -NoNewLine; write-host "ERROR" -ForegroundColor Red -NoNewLine; write-host "===" -ForegroundColor DarkGray;
@@ -71,41 +80,52 @@ if ($HasRunBefore -ne $null)
     write-host "You can not proceed until you've run a cleanup."
     write-host ""
     pause
-    &@$banner
+    &@banner
 }
 
 #Detects and deletes all GPOs stemming from workaround deployments with PrintNightmareAutomated as well as most manual deployments.
 #It will display the list to the user and ask for them to verify, to ensure no production GPOs are affected.
+#If no GPOs are detected, it will simply proceed without deleting anything. (After telling the user briefly)
 $SpoolerGPOs = Get-GPO -All | Where-Object {$_.displayname -like "*spool*" -or $_.displayname -like "*nightmare*"} | Select displayname
-cls
-$SpoolerGPOs | out-host
-echo "" | out-host
-echo "Please verify these are only related to PrintNightmare" | out-host
-echo "" | out-host
-$DeleteSpoolerGPOs = read-host "Continue? (Y/N)"
-
-#If the user does not choose to continue, they will be adviced to manually clean up the policies, and exit the script.
-if ($DeleteSpoolerGPOs -ne "y")
+if ($SpoolerGPOs -ne $null)
 {
     cls
-    write-host "Please manually clean up policies."
-    pause
-    cls
-    break
+    $SpoolerGPOs | out-host
+    echo "" | out-host
+    echo "Please verify these are only related to PrintNightmare" | out-host
+    echo "" | out-host
+    $DeleteSpoolerGPOs = read-host "Continue? (Y/N)"
+    
+    #If the user does not choose to continue, they will be adviced to manually clean up the policies, and exit the script.
+    if ($DeleteSpoolerGPOs -ne "y")
+    {
+        cls
+        write-host "Please manually clean up policies."
+        pause
+        cls
+        break
+    }
+    #If the user chooses to proceed, all previously listed GPOs will be deleted.
+    foreach ($SpoolerGPO in $SpoolerGPOs)
+    {
+        $Spooler = $SpoolerGPO.Displayname
+        Remove-GPO -Name $Spooler
+    }
 }
-#If the user chooses to proceed, all previously listed GPOs will be deleted.
-foreach ($SpoolerGPO in $SpoolerGPOs)
+else
 {
-    $Spooler = $SpoolerGPO.Displayname
-    Remove-GPO -Name $Spooler
+    cls
+    write-host "No GPOs relating to a PrintNightmare workaround has been found" -ForegroundColor Red
+    sleep 1
 }
-
-#Detects if a previous download of dependecies exist, if it does, it will delete it and download anew, to ensure it is correct and the newest version.
+#Detects if a previous download of dependecies exist, if it does, it will delete it, as a new and ensured complete package is downloaded.
 $DoesDependsExist = Test-Path -Path C:\PrintNightmareTemp
 if ($DoesDependsExist -eq $true)
 {
     Remove-Item –path C:\PrintNightmareTemp –recurse -Force
 }
+
+#Downloads dependencies
 New-Item -ItemType "directory" -Path C:\PrintNightmareTemp
 sleep 1
 $GPOURL = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("aHR0cHM6Ly9naXRodWIuY29tL3Bja3RzL1ByaW50TmlnaHRtYXJlV29ya2Fyb3VuZC9yYXcvbWFpbi9HUE9zLnppcA=="))
@@ -192,128 +212,186 @@ $SpoolerChoice =
                         #This code is not run at first appearance but is called in later.
                         $ServerVersionChoice =
                         {
+                                                        
+                            #Gets all devices of a certain OS version and creates an array of these.
+
+                            #Server versions
+                            $SRV2019 = (Get-ADcomputer -filter {operatingsystem -like "*2019*"} -Properties Name, OperatingSystem).name
+                            $SRV2016 = (Get-ADcomputer -filter {operatingsystem -like "*2016*"} -Properties Name, OperatingSystem).name
+                            $SRV2012 = (Get-ADcomputer -filter {operatingsystem -like "*2012*"} -Properties Name, OperatingSystem).name
+                            $SRVOLD  = (Get-ADcomputer -filter {operatingsystem -like "*200*"}  -Properties Name, OperatingSystem).name
+
+                            #Client versions
+                            $WIN10  = (Get-ADcomputer -filter {operatingsystem -like "Windows 10*"} -Properties Name, OperatingSystem).name
+                            $WINOLD = (Get-ADcomputer -filter {operatingsystem -notlike "Windows 10*" -and operatingsystem -notlike "*Server*"} -Properties Name, OperatingSystem).name
+
+                            #Presents the possible options to the user and lets them choose the combination of device versions they desire
+                            #This will loop until it is exited on purpose. It is not possible to pick the same option twice. (nothing will happen after first time)
+                            $AddedDeviceGroups = {$hostname}.Invoke()
+                            while ($AddedDeviceGroup -ne "done")
                             {
-                                
-                                #Gets all devices of a certain OS version and creates an array of these.
-
-                                #Server versions
-                                $SRV2019 = (Get-ADcomputer -filter {operatingsystem -like "*2019*"} -Properties Name, OperatingSystem).name
-                                $SRV2016 = (Get-ADcomputer -filter {operatingsystem -like "*2016*"} -Properties Name, OperatingSystem).name
-                                $SRV2012 = (Get-ADcomputer -filter {operatingsystem -like "*2012*"} -Properties Name, OperatingSystem).name
-                                $SRVOLD  = (Get-ADcomputer -filter {operatingsystem -like "*200*"}  -Properties Name, OperatingSystem).name
-
-                                #Client versions
-                                $WIN10  = (Get-ADcomputer -filter {operatingsystem -like "Windows 10*"} -Properties Name, OperatingSystem).name
-                                $WINOLD = (Get-ADcomputer -filter {operatingsystem -notlike "Windows 10*" -and operatingsystem -notlike "*Server*"} -Properties Name, OperatingSystem).name
-
-                                #Presents the possible options to the user and lets them choose the combination of device versions they desire
-                                #This will loop until it is exited on purpose. It is not possible to pick the same option twice. (nothing will happen after first time)
-                                $AddedDeviceGroups = {$hostname}.Invoke()
-                                while ($AddedDeviceGroup -ne "done")
-                                {
-                                    if ($AddedDeviceGroups -ne $null)
-                                    {
-                                        cls
-                                        write-host "Possible groups of target devices:" -ForegroundColor Green
-                                        write-host ""
-                                        write-host "(1). Server 2019"
-                                        write-host "(2). Server 2016"
-                                        write-host "(3). Server 2012 and Server 2012R2"
-                                        write-host "(4). Server 2008R2 and earlier"
-                                        write-host ""
-                                        write-host "(5). Windows 10"
-                                        write-host "(6). Windows 8.1 and earlier"
-                                        write-host ""
-                                        write-host ""
-                                        write-host "Targetted devices:" -ForegroundColor Red
-                                        $AddedDeviceGroups
-                                        write-host;
-                                    }
-                                    write-host ""
-                                    write-host "--------------------------------------------------------" -ForegroundColor DarkGray
-                                    write-host ""
-                                    write-host "Please input what devices you want to apply the changes to, one at a time."
-                                    write-host "Please be absolutely sure of the devices you add, as the only easy way to add or remove devices later is to start over."
-                                    write-host ""
-                                    write-host "Type 'done' when you do not want to add any more device groups"
-                                    $AddedDeviceGroup = Read-Host "Option"
-
-                                    #Append array to array of arrays. Append list of servers (an array) to the desireddevices array
-                                    ###################################################################################################################################################################################################################################################################################
-
-                                    #Detects if a valid input is selected and lists the option as "picked" on the screen. The handling of duplicate choices is also here.
-                                    #In the same instance, the devices belonging to the chosen group, will be added to an array that is used later for actual deployment.
-                                    #A "block" exists for each group of devices, they function identically.
-                                    if ($AddedDeviceGroup -eq "1")
-                                    {
-                                        $AddedDeviceGroup = "Server 2019"
-                                        if ($AddedDeviceGroups -match "2019" -eq $false)
-                                        {
-                                            $AddedDeviceGroups.Add($AddedDeviceGroup)
-                                            #$DesiredDevices
-                                            #$DesiredDevices.Add($SRV2019)
-                                        }
-                                    }
-                                    if ($AddedDeviceGroup -eq "2")
-                                    {
-                                        $AddedDeviceGroup = "Server 2016"
-                                        if ($AddedDeviceGroups -match "2016" -eq $false)
-                                        {
-                                            $AddedDeviceGroups.Add($AddedDeviceGroup)
-                                        }
-                                    }
-                                    if ($AddedDeviceGroup -eq "3")
-                                    {
-                                        $AddedDeviceGroup = "Server 2012 and Server 2012R2"
-                                        if ($AddedDeviceGroups -match "2012" -eq $false)
-                                        {
-                                            $AddedDeviceGroups.Add($AddedDeviceGroup)
-                                        }
-                                    }
-                                    if ($AddedDeviceGroup -eq "4")
-                                    {
-                                        $AddedDeviceGroup = "Server 2008R2 and earlier"
-                                        if ($AddedDeviceGroups -match "Server 2008R2 and earlier" -eq $false)
-                                        {
-                                            $AddedDeviceGroups.Add($AddedDeviceGroup)
-                                        }
-                                    }
-                                    if ($AddedDeviceGroup -eq "5")
-                                    {
-                                        $AddedDeviceGroup = "Windows 10"
-                                        if ($AddedDeviceGroups -match "Windows 10" -eq $false)
-                                        {
-                                            $AddedDeviceGroups.Add($AddedDeviceGroup)
-                                        }
-                                    }
-                                    if ($AddedDeviceGroup -eq "6")
-                                    {
-                                        $AddedDeviceGroup = "Windows 8.1 and earlier"
-                                        if ($AddedDeviceGroups -match "Windows 8.1 and earlier" -eq $false)
-                                        {
-                                            $AddedDeviceGroups.Add($AddedDeviceGroup)
-                                        }
-                                    }
-                                    cls
-                                    ###################################################################################################################################################################################################################################################################################
-                                }
-                                $AddedDeviceGroups.RemoveAt(0)
-                                $AddedDeviceGroups.Remove("done")
+                                sleep 1
                                 cls
-                                Write-host "The chosen policies will now be applied to the chosen device groups..."
-                                sleep 2                                  
+                                write-host "Possible groups of target devices:" -ForegroundColor Green
+                                write-host ""
+                                write-host "(1). Server 2019"
+                                write-host "(2). Server 2016"
+                                write-host "(3). Server 2012 and 2012R2"
+                                write-host "(4). Server 2008R2 and earlier"
+                                write-host ""
+                                write-host "(5). Windows 10"
+                                write-host "(6). Windows 8.1 and earlier"
+                                write-host ""
+                                write-host ""
+                                write-host "Targetted devices:" -ForegroundColor Red
+                                $AddedDeviceGroups
+                                write-host;
+                                write-host ""
+                                write-host "--------------------------------------------------------" -ForegroundColor DarkGray
+                                write-host ""
+                                write-host "Please input what devices you want to apply the changes to, one at a time."
+                                write-host "Please be absolutely sure of the devices you add, as the only easy way to add or remove devices later is to start over."
+                                write-host "If you accidentally add an unintended group, you can 'add' it again to remove it"
+                                write-host ""
+                                write-host "Type 'done' when you do not want to add any more device groups"
+                                $AddedDeviceGroup = Read-Host "Option"
+                                #Append array to array of arrays. Append list of servers (an array) to the desireddevices array
+                                ###################################################################################################################################################################################################################################################################################
 
-                                ForEach ($DesiredDevices in $DesiredDevices) 
+                                #Detects if a valid input is selected and lists the option as "picked" on the screen. The handling of duplicate choices is also here.
+                                #In a later instance, the devices belonging to the chosen group, will be added to an array that is used later for actual deployment.
+                                #If you pick an existing option, it will be removed
+                                #A "block" exists for each group of devices, they function identically.
+                                if ($AddedDeviceGroup -eq "1")
                                 {
-                                    $Name = $DesiredServer.Name
-                                    Set-GPPermission -name $DesiredGPO -Targetname "$Name" -TargetType Computer -PermissionLevel GpoApply
+                                    if ($AddedDeviceGroups.Contains("Server 2019") -ne $true)
+                                    {
+                                        $AddedDeviceGroups.Add("Server 2019")
+                                    }
+                                    else
+                                    {
+                                        $AddedDeviceGroups.Remove("Server 2019")
+                                    }
                                 }
-                                cls
-                                write-host "DONE." -ForegroundColor Red
-                                sleep 3
-                                break
+                                if ($AddedDeviceGroup -eq "2")
+                                {
+                                    if ($AddedDeviceGroups.Contains("Server 2016") -ne $true)
+                                    {
+                                        $AddedDeviceGroups.Add("Server 2016")
+                                    }
+                                    else
+                                    {
+                                        $AddedDeviceGroups.Remove("Server 2016")
+                                    }
+                                }
+                                if ($AddedDeviceGroup -eq "3")
+                                {
+                                    if ($AddedDeviceGroups.Contains("Server 2012 and 2012R2") -ne $true)
+                                    {
+                                        $AddedDeviceGroups.Add("Server 2012 and 2012R2")
+                                    }
+                                    else
+                                    {
+                                        $AddedDeviceGroups.Remove("Server 2012 and 2012R2")
+                                    }
+                                }
+                                if ($AddedDeviceGroup -eq "4")
+                                {
+                                    if ($AddedDeviceGroups.Contains("Server 2008R2 and earlier") -ne $true)
+                                    {
+                                        $AddedDeviceGroups.Add("Server 2008R2 and earlier")
+                                    }
+                                    else
+                                    {
+                                        $AddedDeviceGroups.Remove("Server 2008R2 and earlier")
+                                    }
+                                }
+                                if ($AddedDeviceGroup -eq "5")
+                                {
+                                    if ($AddedDeviceGroups.Contains("Windows 10") -ne $true)
+                                    {
+                                        $AddedDeviceGroups.Add("Windows 10")
+                                    }
+                                    else
+                                    {
+                                        $AddedDeviceGroups.Remove("Windows 10")
+                                    }
+                                }
+                                if ($AddedDeviceGroup -eq "6")
+                                {
+
+                                    if ($AddedDeviceGroups.Contains("Windows 8.1 and earlier") -ne $true)
+                                    {
+                                        $AddedDeviceGroups.Add("Windows 8.1 and earlier")
+                                    }
+                                    else
+                                    {
+                                        $AddedDeviceGroups.Remove("Windows 8.1 and earlier")
+                                    }
+                                }
                             }
-                        }    
+                            $AddedDeviceGroups.RemoveAt(0)
+                            $AddedDeviceGroups.Remove("done")
+
+                            #Adds the devices from respective groups to the array used for actual deployment
+                            if ($AddedDeviceGroups.Contains("Server 2019") -eq $true)
+                            {
+                                $DesiredDevices += $SRV2019
+                            }
+                            if ($AddedDeviceGroups.Contains("Server 2016") -eq $true)
+                            {
+                                $DesiredDevices += $SRV2016
+                            }
+                            if ($AddedDeviceGroups.Contains("Server 2012 and 2012R2") -eq $true)
+                            {
+                                $DesiredDevices += $SRV2012
+                            }
+                            if ($AddedDeviceGroups.Contains("Server 2008R2 and earlier") -eq $true)
+                            {
+                                $DesiredDevices += $SRVOLD
+                            }
+                            if ($AddedDeviceGroups.Contains("Windows 10") -eq $true)
+                            {
+                                $DesiredDevices += $WIN10
+                            }
+                            if ($AddedDeviceGroups.Contains("Windows 8.1 and earlier") -eq $true)
+                            {
+                                $DesiredDevices += $WINOLD
+                            }
+                            if ($AddedDeviceGroups.Contains("Server 2019") -ne $true -and $AddedDeviceGroups.Contains("Server 2016") -ne $true -and $AddedDeviceGroups.Contains("Server 2012 and 2012R2") -ne $true -and $AddedDeviceGroups.Contains("Server 2008R2 and earlier") -ne $true -and $AddedDeviceGroups.Contains("Windows 10") -ne $true -and $AddedDeviceGroups.Contains("Windows 8.1 and earlier") -ne $true)
+                            {
+                                write-warning "ERROR! - You have not picked any groups"
+                                write-warning "Undoing changes and returning to main menu..."
+                                sleep 2
+                                $PreviousGPOs = Get-GPO -All | Where-Object {$_.displayname -like "PRTNMITR_*"}
+                                foreach ($PreviousGPO in $PreviousGPOs)
+                                {
+                                    $PGPO = $PreviousGPO.Displayname
+                                    Remove-GPO -Name $PGPO
+                                }
+                                Remove-Item –path C:\PrintNightmareTemp –recurse -Force
+                                cls
+                                &@banner
+                            }
+
+                            cls
+                            Write-host "The chosen policies will now be applied to the chosen device groups..."
+                            sleep 2                                  
+                                
+                            #Applies the previously chosen GPO to the chosen groups of devices and finally exits.. by returning to the main menu
+                            ForEach ($DesiredDevice in $DesiredDevices) 
+                            {
+                                Set-GPPermission -name $DesiredGPO -Targetname "$DesiredDevice" -TargetType Computer -PermissionLevel GpoApply
+                            }
+                            cls
+                            write-host ""
+                            write-host "DONE." -ForegroundColor Red
+                            sleep 3
+                            break
+                        }
+                        #The next 8 blocks of code are almost identical
+                        #The blocks select a GPO based on previous choices and deploys and links it in the domain.
+                        #Afterwards the user will be directed to the previous block that lets them choose what devices to target    
                         if ($DesiredSpoolerState -eq "e" -and $DesiredRemoteState -eq "e" -and $DesiredPAPState -eq "e")
                         {
                             $GPOName = "PRTNMITR_SpoolerEnable-RemoteEnable-PAPEnable"
@@ -454,10 +532,8 @@ $SpoolerChoice =
                 }
                 &@PAPChoice
             }
-        } 
+        }
+        &@RemoteChoice 
     }
 }
 &@SpoolerChoice
-
-
-
