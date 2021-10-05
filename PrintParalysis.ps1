@@ -1,4 +1,4 @@
-﻿#Created by ANTLA and MITHO
+﻿#Created by packet and mtossen
 
 #Run entire script(as admin), you will make choices during the execution, so don't make partial runs unless you know what you're doing.
 
