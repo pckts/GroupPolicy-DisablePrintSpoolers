@@ -1,4 +1,4 @@
-﻿#Created by ANTLA
+﻿#Created by packet
 
 #Checks if run as admin
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -32,7 +32,7 @@ $banner =
     sleep 1
     cls
     write-host "";
-    write-host "                                       " -BackGroundColor Black -NoNewLine; write-host "By ANTLA" -ForeGroundColor Red -BackGroundColor Black -NoNewLine; write-host "                                      " -BackGroundColor Black
+    write-host "                                       " -BackGroundColor Black -NoNewLine; write-host "By packet" -ForeGroundColor Red -BackGroundColor Black -NoNewLine; write-host "                                      " -BackGroundColor Black
     write-host "  " -BackGroundColor Black -NoNewLine; write-host "██████╗ ██████╗ ██╗███╗   ██╗████████╗██████╗ ██████╗ ███████╗ █████╗ ███╗   ███╗" -ForeGroundColor Darkyellow -BackGroundColor Black -NoNewLine; write-host "  " -BackGroundColor Black
     write-host "  " -BackGroundColor Black -NoNewLine; write-host "██╔══██╗██╔══██╗██║████╗  ██║╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██╔══██╗████╗ ████║" -ForeGroundColor Darkyellow -BackGroundColor Black -NoNewLine; write-host "  " -BackGroundColor Black
     write-host "  " -BackGroundColor Black -NoNewLine; write-host "██████╔╝██████╔╝██║██╔██╗ ██║   ██║   ██║  ██║██████╔╝█████╗  ███████║██╔████╔██║" -ForeGroundColor Darkyellow -BackGroundColor Black -NoNewLine; write-host "  " -BackGroundColor Black
@@ -45,7 +45,7 @@ $banner =
     write-host "|and deploys chosen remediation GPO  |" -BackGroundColor Black -NoNewLine; write-host " deployed with PrintParalysis (Formerly       |" -ForeGroundColor DarkGray -BackGroundColor Black
     write-host "|------------------------------------|" -BackGroundColor Black -NoNewLine; write-host " PrintNightmareAutomated) or deployments that |" -ForeGroundColor DarkGray -BackGroundColor Black
     write-host "|2. (cleanup) Deletes previously     |" -BackGroundColor Black -NoNewLine; write-host " otherwise follow the same naming conventions.|" -ForeGroundColor DarkGray -BackGroundColor Black
-    write-host "|deployed remediation GPOs           |" -BackGroundColor Black -NoNewLine; write-host " (CTRL+C to exit)            For ITR use only |" -ForeGroundColor DarkGray -BackGroundColor Black
+    write-host "|deployed remediation GPOs           |" -BackGroundColor Black -NoNewLine; write-host " (CTRL+C to exit)                             |" -ForeGroundColor DarkGray -BackGroundColor Black
     write-host "+------------------------------------+" -BackGroundColor Black -NoNewLine; write-host "----------------------------------------------+" -ForeGroundColor DarkGray -BackGroundColor Black
     write-host ""
     $WantedFunction = read-host "Select function (1/2)"
