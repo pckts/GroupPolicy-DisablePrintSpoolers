@@ -1,6 +1,6 @@
 # Created by packet and mtossen for https://www.parceu.com
 
-# Specify how to re-enable printspoolers and/or Remoteprint and/or Point-and-Print
+# Disables all printspoolers across the entire domain enviornment
 # Must be run on a DC
 
 # Note: Non-functional due to GPO download source deletion.
