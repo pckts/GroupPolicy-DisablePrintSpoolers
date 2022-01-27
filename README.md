@@ -3,7 +3,7 @@
 
 ### This was created in relation to PrintNightmare
 
-Disables all printspoolers across the entire doamin enviornment
+Disables all printspoolers across the entire domain enviornment
 
 This code is not functional as-is due to required GPO has been deleted at download source!
 
