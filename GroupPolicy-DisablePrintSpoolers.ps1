@@ -1,4 +1,16 @@
-﻿#Created by packet and mtossen
+# Created by packet and mtossen for https://www.parceu.com
+
+# Specify how to re-enable printspoolers and/or Remoteprint and/or Point-and-Print
+# Must be run on a DC
+
+# Note: Non-functional due to GPO download source deletion.
+
+#========#
+# ^^^^^^ #
+# README #
+#========#
+
+########################################################################################################################################################################################################################
 
 #Run entire script(as admin), you will make choices during the execution, so don't make partial runs unless you know what you're doing.
 
