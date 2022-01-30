@@ -1,5 +1,3 @@
-# Created by packet and mtossen for https://www.parceu.com
-
 # Disables all printspoolers across the entire domain enviornment
 # Must be run on a DC
 
